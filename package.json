@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/think2011/koa-upload#readme",
   "dependencies": {
+    "co-fs": "^1.2.0",
     "koa": "^1.1.2",
     "koa-better-body": "^1.0.17"
   }
