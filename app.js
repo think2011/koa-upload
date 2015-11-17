@@ -1,10 +1,12 @@
 var app       = require('koa')(),
-    fs        = require('co-fs'),
+    coFs      = require('co-fs'),
+    fs        = require('fs'),
     path      = require('path'),
     bodyParse = require('koa-better-body'),
     cors      = require('koa-cors');
 
-var port = process.env.PORT || 3000;
+var port     = process.env.PORT || 3000,
+    demoFile = path.join(__dirname, 'demo.jpg');
 
 app.use(cors());
 
@@ -12,15 +14,41 @@ app.use(bodyParse({
     multipart: true
 }));
 
-app.use(function *() {
-    if (this.request.method === 'POST') {
-        var file    = this.request.body.files.file.path,
-            newFile = path.join(__dirname, 'demo.jpg');
-
-        //yield fs.createReadStream(file).pipe(fs.createWriteStream(newFile));
-
+app.use(function *(next) {
+    if (this.request.method === 'GET') {
         this.type = 'jpg';
-        this.body = yield fs.readFile();
+        this.body = yield coFs.readFile(demoFile);
+    }
+
+    yield next;
+});
+
+app.use(function *(next) {
+    if (this.request.method === 'POST') {
+        var file    = this.request.body.files.file,
+            demoSrc = 'http://' + path.join(this.req.headers.host, `demo.jpg?${Date.now()}`);
+
+        if (+this.request.body.fields.fileLen !== file.size) {
+            this.status = 403;
+            return this.body = {msg: '传输数据大小校验不一致, 请重试'};
+        }
+
+        this.body = yield new Promise((resolve, reject) => {
+            fs
+                .createReadStream(file.path)
+                .pipe(fs.createWriteStream(demoFile))
+                .on('finish', function () {
+                    resolve({
+                        mtime: file.mtime,
+                        name : file.name,
+                        size : file.size,
+                        type : file.type,
+                        src  : demoSrc
+                    });
+                });
+        });
+
+        yield next;
     }
 });
 
