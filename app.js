@@ -5,7 +5,7 @@ var app       = require('koa')(),
     bodyParse = require('koa-better-body'),
     cors      = require('koa-cors');
 
-var port     = process.env.PORT || 3000,
+var port     = process.env.PORT || 4000,
     demoFile = path.join(__dirname, 'demo.jpg');
 
 app.use(cors());
@@ -47,6 +47,8 @@ app.use(function *(next) {
                     });
                 });
         });
+
+        console.log(file, new Date());
 
         yield next;
     }
